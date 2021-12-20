@@ -1,0 +1,200 @@
+---
+title: "Two-sample Tests For High-dimensional Covariance Matrices"
+author: "Sun Wenming 21026 Sa21229007"
+date: "2021/12/17"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Two-sample Tests For High-dimensional Covariance Matrices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+
+  "StatComp21026" is a R package which contains homeworks in the Statistical Computing course and two functions dealing with the two-sample covariance matrices. 
+  
+  Inspired by Jun Li and Song Xi Chen, their paper "Two sample tests for high dimensional covariance matrices" proposed a test on high-dimensional variance-covariance without the normality assumption while allowing the dimension to be
+much larger than the sample sizes. Then they put the codes in the R-package "equalCovs". In order to speed up the codes, I write two functions in my R-package "StatComp21026".
+
+ The function in package "equalCovs":
+ 
+   equalCovs(sam1, sam2, size1, size2):test the equality of two covariance matrices, writed by R and Fortran,contains many for statements.
+   
+ The functions in package "Statcomp21026":
+ 
+  equalCovs_C<(sam1,sam2):test the equality of two covariance matrices, writed by R and Cpp,contains many for statements.
+  
+  equalCovs_Matrix(sam1,sam2):test the equality of two covariance matrices, writed by R and Cpp,without any for statements,uses matrix to deal with sums.
+
+## equalCovs_C
+
+Here is a example from package "equalCovs"
+
+```{r}
+library(Rcpp)
+library(RcppEigen)
+dir_cpp <- '../vignettes/'
+# Can create source file in Rstudio
+sourceCpp(paste0(dir_cpp,"StatCompC1.cpp"))
+
+library(mvtnorm)
+p<-700 # the dimension of multivariate
+theta1<-2
+theta2<-1
+mat1<-diag(theta1,p-1)
+mat2<-diag(theta1+theta1*theta2,p-1)
+mat3<-diag(theta2,p-2)
+
+mat1<-rbind(mat1,rep(0,p-1))
+mat2<-rbind(mat2,rep(0,p-1))
+mat3<-rbind(mat3,rep(0,p-2),rep(0,p-2))
+
+mat1<-cbind(rep(0,p),mat1)
+mat2<-cbind(rep(0,p),mat2)
+mat3<-cbind(rep(0,p),rep(0,p),mat3)
+sigma1<-mat1+t(mat1)+diag(1+theta1^2,p)
+sigma2<-mat2+t(mat2)+mat3+t(mat3)+diag(1+theta1^2+theta2^2,p)
+
+size1<-80
+size2<-80
+sam1<-rmvnorm(size1,runif(p,0,5),sigma1) # generate the samples
+sam2<-rmvnorm(size2,runif(p,-3,3),sigma2)
+
+equalCovs_C(sam1,sam2)
+```
+
+
+## equalCovs_Matrix
+
+Here is the same example for equalCovs_Matrix
+```{r}
+library(Rcpp)
+library(RcppEigen)
+library(mvtnorm)
+p<-700 # the dimension of multivariate
+
+theta1<-2
+theta2<-1
+mat1<-diag(theta1,p-1)
+mat2<-diag(theta1+theta1*theta2,p-1)
+mat3<-diag(theta2,p-2)
+
+mat1<-rbind(mat1,rep(0,p-1))
+mat2<-rbind(mat2,rep(0,p-1))
+mat3<-rbind(mat3,rep(0,p-2),rep(0,p-2))
+
+mat1<-cbind(rep(0,p),mat1)
+mat2<-cbind(rep(0,p),mat2)
+mat3<-cbind(rep(0,p),rep(0,p),mat3)
+sigma1<-mat1+t(mat1)+diag(1+theta1^2,p)
+sigma2<-mat2+t(mat2)+mat3+t(mat3)+diag(1+theta1^2+theta2^2,p)
+
+size1<-80
+size2<-80
+sam1<-rmvnorm(size1,runif(p,0,5),sigma1) # generate the samples
+sam2<-rmvnorm(size2,runif(p,-3,3),sigma2)
+
+equalCovs_Matrix(sam1,sam2)
+```
+
+Test the results of three function are equal.
+```{r}
+library(equalCovs)
+library(mvtnorm)
+
+p<-700 # the dimension of multivariate
+
+theta1<-2
+theta2<-1
+mat1<-diag(theta1,p-1)
+mat2<-diag(theta1+theta1*theta2,p-1)
+mat3<-diag(theta2,p-2)
+
+mat1<-rbind(mat1,rep(0,p-1))
+mat2<-rbind(mat2,rep(0,p-1))
+mat3<-rbind(mat3,rep(0,p-2),rep(0,p-2))
+
+mat1<-cbind(rep(0,p),mat1)
+mat2<-cbind(rep(0,p),mat2)
+mat3<-cbind(rep(0,p),rep(0,p),mat3)
+sigma1<-mat1+t(mat1)+diag(1+theta1^2,p)
+sigma2<-mat2+t(mat2)+mat3+t(mat3)+diag(1+theta1^2+theta2^2,p)
+
+size1<-80
+size2<-80
+
+sam1<-rmvnorm(size1,runif(p,0,5),sigma1) # generate the samples
+sam2<-rmvnorm(size2,runif(p,-3,3),sigma2)
+
+equalCovs(sam1,sam2,size1,size2)
+equalCovs_C(sam1,sam2)
+equalCovs_Matrix(sam1,sam2)
+```
+
+Compute the time of each function.
+```{r}
+library(microbenchmark)
+ts<-microbenchmark(covCpp=equalCovs_C(sam1,sam2),covFortran=equalCovs(sam1,sam2,size1,size2),covMatrix=equalCovs_Matrix(sam1,sam2))
+summary(ts)[,c(1,3,5,6)]
+```
+We can find that the time with Matrix is the smallest, the time with Fortran is biggest.
+
+
+
+Test the time with low-dimension and small samples.
+
+```{r}
+library(equalCovs)
+library(mvtnorm)
+p<-7 # the dimension of multivariate
+
+theta1<-2
+theta2<-1
+mat1<-diag(theta1,p-1)
+mat2<-diag(theta1+theta1*theta2,p-1)
+mat3<-diag(theta2,p-2)
+
+mat1<-rbind(mat1,rep(0,p-1))
+mat2<-rbind(mat2,rep(0,p-1))
+mat3<-rbind(mat3,rep(0,p-2),rep(0,p-2))
+
+mat1<-cbind(rep(0,p),mat1)
+mat2<-cbind(rep(0,p),mat2)
+mat3<-cbind(rep(0,p),rep(0,p),mat3)
+sigma1<-mat1+t(mat1)+diag(1+theta1^2,p)
+sigma2<-mat2+t(mat2)+mat3+t(mat3)+diag(1+theta1^2+theta2^2,p)
+
+size1<-10
+size2<-10
+
+sam1<-rmvnorm(size1,runif(p,0,5),sigma1) # generate the samples
+sam2<-rmvnorm(size2,runif(p,-3,3),sigma2)
+
+equalCovs(sam1,sam2,size1,size2)
+equalCovs_C(sam1,sam2)
+equalCovs_Matrix(sam1,sam2)
+```
+
+Compute the time of each function.
+```{r}
+library(microbenchmark)
+ts<-microbenchmark(covCpp=equalCovs_C(sam1,sam2),covFortran=equalCovs(sam1,sam2,size1,size2),covMatrix=equalCovs_Matrix(sam1,sam2))
+summary(ts)[,c(1,3,5,6)]
+```
+
+We can find that, my two functions are better than the Fortran.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

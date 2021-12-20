@@ -1,0 +1,32 @@
+Package: StatComp21026
+Type: Package
+Title: A R package for Statistical Computing course
+Version: 1.0
+Date: 2021-12-18
+Author: Sun Wenming
+Maintainer: Sun Wenming <swm123456@mail.ustc.edu.cn>
+Description: two more effective functions for testing the equality of two covariance matrices.
+Encoding: UTF-8
+Imports: Rcpp(>= 1.0.7),
+         RcppEigen,
+         knitr,
+         MASS,
+         bootstrap,
+         boot,
+         RANN,
+         energy,
+         Ball,
+         parallel,
+         microbenchmark,
+         equalCovs,
+         stats,
+         mvtnorm
+License: GPL (>= 2)
+LinkingTo: Rcpp,RcppEigen
+RoxygenNote: 7.1.2
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
+URL: http://github.com/SnowBall0416/StatComp21026
+BugReports: http://github.com/SnowBall0416/StatComp21026/issues
+
+
